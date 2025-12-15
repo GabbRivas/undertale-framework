@@ -1,0 +1,29 @@
+# Paths
+builddir = build
+objdir = build/obj
+
+raylib_path = C:/raylib/raylib
+cc = "C:/Program Files/LLVM/bin/clang.exe"
+
+# Flags
+# -mwindows disables console window (keep if you need)
+cflags = -std=c99 -Wall -O2 -static -Isource -I$raylib_path/src -DPLATFORM_DESKTOP --target=x86_64-w64-mingw32 --gcc-toolchain=C:/raylib/w64devkit -fuse-ld=lld
+# Linker: make sure lib search path points to where raylib's lib/.a is located if needed
+ldflags = -L$raylib_path -lraylib -lopengl32 -lgdi32 -lwinmm
+
+# Rules
+rule cc
+  command = $cc $cflags -c $in -o $out
+  description = Compiling $in
+
+rule link
+  command = $cc $in -o $out $ldflags
+  description = Linking $out
+
+# Build
+build $objdir/input.o: cc source/input/input.c
+build $objdir/window_control.o : cc source/window_control/window_control.c
+build $objdir/main.o:  cc source/main.c
+
+build test.exe: link $objdir/main.o $objdir/input.o $objdir/window_control.o
+default test.exe
