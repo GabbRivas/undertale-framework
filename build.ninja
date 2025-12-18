@@ -1,29 +1,33 @@
-# Paths
+# build.ninja
 builddir = build
 objdir = build/obj
 
-raylib_path = C:/raylib/raylib
+raylib_inc = include
+raylib_lib = lib/libraylib.a
+
 cc = "C:/Program Files/LLVM/bin/clang.exe"
 
-# Flags
-# -mwindows disables console window (keep if you need)
-cflags = -std=c99 -Wall -O2 -static -Isource -I$raylib_path/src -DPLATFORM_DESKTOP --target=x86_64-w64-mingw32 --gcc-toolchain=C:/raylib/w64devkit -fuse-ld=lld
-# Linker: make sure lib search path points to where raylib's lib/.a is located if needed
-ldflags = -L$raylib_path -lraylib -lopengl32 -lgdi32 -lwinmm
+# Compiler flags: include raylib headers and any other project include dirs
+cflags = -std=c99 -Wall -O3 -Isource -I $raylib_inc -DPLATFORM_DESKTOP --target=x86_64-w64-mingw32
 
-# Rules
+# Link flags: link the static library directly and system libs
+ldflags = -mwindows -static --target=x86_64-w64-mingw32 -lopengl32 -lgdi32 -lwinmm
+
 rule cc
   command = $cc $cflags -c $in -o $out
   description = Compiling $in
 
+# link: place the libraylib.a file before object files or on the command line explicitly
 rule link
-  command = $cc $in -o $out $ldflags
+  # direct archive path ensures the right static lib is used
+  command = $cc $in $raylib_lib -o $out $ldflags
   description = Linking $out
 
-# Build
+# Objects
 build $objdir/input.o: cc source/input/input.c
-build $objdir/window_control.o : cc source/window_control/window_control.c
-build $objdir/main.o:  cc source/main.c
+build $objdir/window_control.o: cc source/window_control/window_control.c
+build $objdir/main.o: cc source/main.c
 
+# Final link (order: object files first is OK; libraylib.a included by the rule)
 build test.exe: link $objdir/main.o $objdir/input.o $objdir/window_control.o
 default test.exe
