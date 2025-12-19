@@ -57,7 +57,7 @@ bool input_bind(Input input, uint8_t slot, InputType type, uint8_t device, uint1
 }
 
 void input_refresh(){
-	for (int _input_index = 0; _input_index < INPUT_PROC_END; ++_input_index){
+	for (int _input_index = 0; _input_index <= INPUT_PROC_END; ++_input_index){
 		const InputRegister *_loaded_input = &_input_container[_input_index];
 		bool down = _is_input_down(_loaded_input);
 
