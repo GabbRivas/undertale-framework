@@ -33,7 +33,7 @@ int main(void){
 
 	// Create
 
-	set_border_path("resources/textures/game_border/1727.png");
+	set_border_path("assets/textures/game_border/1727.png");
 	enable_border();
 
 	InitWindow(get_window_width(), get_window_height(), "Undertale Engine");
