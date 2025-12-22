@@ -10,13 +10,13 @@
 #define MAX_INPUT_BINDS	3
 
 typedef struct {
-	uint16_t keybinds[MAX_INPUT_BINDS];
+	unsigned int keybinds[MAX_INPUT_BINDS];
 	uint8_t bounded_keybinds;
 
-	uint16_t mousebinds[MAX_INPUT_BINDS];
+	unsigned int mousebinds[MAX_INPUT_BINDS];
 	uint8_t bounded_mousebinds;
 
-	uint16_t gamepad_binds[MAX_INPUT_BINDS];
+	unsigned int gamepad_binds[MAX_INPUT_BINDS];
 	uint8_t gamepad_device_binds[MAX_INPUT_BINDS];
 	uint8_t bounded_gamepad_binds;
 } InputRegister;
@@ -38,7 +38,7 @@ typedef enum {
 	INPUT_ACCEPT, INPUT_CANCEL,
 	INPUT_LEFT, INPUT_RIGHT, INPUT_UP, INPUT_DOWN,
 	INPUT_FULLSCREEN,
-	INPUT_PROC_END
+	INPUT_COUNT
 } Input;
 
 void input_init();

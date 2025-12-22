@@ -1,11 +1,9 @@
 #include "input.h"
-#include "raylib.h"
-#include <stdint.h>
 
-static InputRegister _input_container[INPUT_PROC_END];
+static InputRegister _input_container[INPUT_COUNT];
 
-static bool _input_prev_down[INPUT_PROC_END];
-static InputState _input_state_register[INPUT_PROC_END] = {INPUT_IDLE};
+static bool _input_prev_down[INPUT_COUNT];
+static InputState _input_state_register[INPUT_COUNT] = {INPUT_IDLE};
 
 static inline bool _is_input_down(const InputRegister *_input){
 	for (int _entry = 0; _entry < _input->bounded_keybinds; ++_entry){
@@ -38,7 +36,7 @@ static inline void _bind_gamepad_input(InputRegister* _target, uint8_t _slot, ui
 }
 
 bool input_bind(Input input, uint8_t slot, InputType type, uint8_t device, uint16_t input_code){
-	if ((unsigned)input >= INPUT_PROC_END || slot >= MAX_INPUT_BINDS) return false;
+	if ((unsigned)input >= INPUT_COUNT || slot >= MAX_INPUT_BINDS) return false;
 
 	switch (type) {
 		case INPUT_TYPE_KEYBOARD:
@@ -57,7 +55,7 @@ bool input_bind(Input input, uint8_t slot, InputType type, uint8_t device, uint1
 }
 
 void input_refresh(){
-	for (int _input_index = 0; _input_index <= INPUT_PROC_END; ++_input_index){
+	for (int _input_index = 0; _input_index < INPUT_COUNT; ++_input_index){
 		const InputRegister *_loaded_input = &_input_container[_input_index];
 		bool down = _is_input_down(_loaded_input);
 
@@ -70,15 +68,15 @@ void input_refresh(){
 }
 
 bool is_input_held(Input input){
-	if ((unsigned)input >= INPUT_PROC_END) return false;
+	if ((unsigned)input >= INPUT_COUNT) return false;
 	return (_input_state_register[input] == INPUT_HELD || _input_state_register[input] == INPUT_PRESSED);
 }
 
 bool is_input_pressed(Input input){
-	if ((unsigned)input >= INPUT_PROC_END) return false;
+	if ((unsigned)input >= INPUT_COUNT) return false;
 	return _input_state_register[input] == INPUT_PRESSED;
 }
 bool is_input_released(Input input){
-	if ((unsigned)input >= INPUT_PROC_END) return false;
+	if ((unsigned)input >= INPUT_COUNT) return false;
 	return _input_state_register[input] == INPUT_RELEASED;
 }
