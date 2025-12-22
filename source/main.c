@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include "input/input.h"
+#include "window_control/window_control.h"
 
 static void input_custom(void){
 	input_bind(INPUT_ACCEPT, 0, INPUT_TYPE_KEYBOARD, 0, KEY_Z);
@@ -20,6 +21,9 @@ static void input_custom(void){
 
 	input_bind(INPUT_DOWN, 0, INPUT_TYPE_KEYBOARD, 0, KEY_DOWN);
 	input_bind(INPUT_DOWN, 1, INPUT_TYPE_KEYBOARD, 0, KEY_S);
+
+	input_bind(INPUT_FULLSCREEN, 0, INPUT_TYPE_KEYBOARD, 0, KEY_F4);
+	input_bind(INPUT_FULLSCREEN, 1, INPUT_TYPE_KEYBOARD, 0, KEY_F);
 }
 
 int main(void){
@@ -29,20 +33,28 @@ int main(void){
 
 	// Create
 
-	InitWindow(640, 480, "Undertale Engine");
+	set_border_path("resources/textures/game_border/1727.png");
+	enable_border();
+
+	InitWindow(get_window_width(), get_window_height(), "Undertale Engine");
 	SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
 	// Init
 
+	draw_init();
 	// Loop
 	while (!WindowShouldClose()) {
 		input_refresh();
 
-		BeginDrawing();
-		EndDrawing();
+		if (is_input_pressed(INPUT_FULLSCREEN)) toggle_borderless_fullscreen();
+
+		draw_begin();{
+		}
+		draw_end();
 	}
 
 	// Cleanup
 
+	draw_un_init();
 	CloseWindow();
 }

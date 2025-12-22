@@ -11,7 +11,8 @@ cc = "C:/Program Files/LLVM/bin/clang.exe"
 cflags = -std=c99 -Wall -O3 -Isource -I $raylib_inc -DPLATFORM_DESKTOP --target=x86_64-w64-mingw32
 
 # Link flags: link the static library directly and system libs
-ldflags = -mwindows -static --target=x86_64-w64-mingw32 -lopengl32 -lgdi32 -lwinmm
+# -mwindows Disables console
+ldflags = -static --target=x86_64-w64-mingw32 -lopengl32 -lgdi32 -lwinmm
 
 rule cc
   command = $cc $cflags -c $in -o $out
