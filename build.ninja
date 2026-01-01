@@ -1,34 +1,28 @@
-# build.ninja
-builddir = build
-objdir = build/obj
-
-raylib_inc = include
-raylib_lib = lib/libraylib.a
 
 cc = "C:/Program Files/LLVM/bin/clang.exe"
+ld = "C:/Program Files/LLVM/bin/clang.exe"
 
-# Compiler flags: include raylib headers and any other project include dirs
-cflags = -std=c99 -Wall -O3 -Isource -I $raylib_inc -DPLATFORM_DESKTOP --target=x86_64-w64-mingw32
+cflags = -std=c11 -O2 -g -Wall -Wextra --target=x86_64-w64-mingw32 --sysroot=C:/raylib/w64devkit -Iinclude -Icommon -Isource -DDEBUG
 
-# Link flags: link the static library directly and system libs
-# -mwindows Disables console
-ldflags = -mwindows -static --target=x86_64-w64-mingw32 -lopengl32 -lgdi32 -lwinmm
+ldflags = --target=x86_64-w64-mingw32 -static -lopengl32 -lgdi32 -lwinmm -lwinpthread
 
 rule cc
   command = $cc $cflags -c $in -o $out
-  description = Compiling $in
+  description = CC $in
 
-# link: place the libraylib.a file before object files or on the command line explicitly
 rule link
-  # direct archive path ensures the right static lib is used
-  command = $cc $in $raylib_lib -o $out $ldflags
-  description = Linking $out
+  command = $ld $in lib/libraylib.a -o $out $ldflags -fuse-ld=lld
+  description = LINK $out
 
-# Objects
-build $objdir/input.o: cc source/input/input.c
-build $objdir/window_control.o: cc source/window_control/window_control.c
-build $objdir/main.o: cc source/main.c
+rule link_tool
+  command = $ld $in $deps -o $out --target=x86_64-w64-mingw32 -static -fuse-ld=lld
 
-# Final link (order: object files first is OK; libraylib.a included by the rule)
-build test.exe: link $objdir/main.o $objdir/input.o $objdir/window_control.o
-default test.exe
+build build\obj\asset-packer.o: cc tools/asset-packer.c
+build bin/asset-packer.exe: link_tool build\obj\asset-packer.o include/lz4/lz4.c include/xxhash/xxhash.c
+build build\obj\asset_loader.o: cc source/asset_loader/asset_loader.c
+build build\obj\app.o: cc source/app/app.c
+build build\obj\lz4.o: cc include/lz4/lz4.c
+build build\obj\xxhash.o: cc include/xxhash/xxhash.c
+
+build bin\undertale-engine.exe: link build\obj\asset_loader.o build\obj\app.o build\obj\lz4.o build\obj\xxhash.o
+default bin\undertale-engine.exe bin/asset-packer.exe
