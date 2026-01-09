@@ -10,10 +10,15 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
-#define ASSET_LOADER_SIGN 		"ASSET_LOADER"
 #define ASSET_LOADER_GLOBAL_CLUSTER 	"global_cluster"
 #define ASSET_LOADER_BATTLE_CLUSTER 	"battle_cluster"
 #define ASSET_LOADER_OVERWORLD_CLUSTER 	"overworld_cluster"
+
+#ifdef DEBUG
+#define ASSET_LOADER_SIGN 		"ASSET_LOADER"
+#else
+#define ASSET_LOADER_SIGN		""
+#endif
 
 typedef struct {
     uint8_t 	loaded;
