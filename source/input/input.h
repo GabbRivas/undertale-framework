@@ -1,53 +1,20 @@
-#ifndef _INPUT_SYSTEM_H
-#define _INPUT_SYSTEM_H
+#ifndef INPUT_H
+#define INPUT_H
 
-// Made by Gab Rivas 15/12/25
-#include <stdint.h>
-#include <raylib.h>
-#include <stdbool.h>
-#include <string.h>
+#include <input/input_definitions.h>
 
-#define MAX_INPUT_BINDS	3
+#ifdef DEBUG
+#define INPUT_SYSTEM_SIGN 		"INPUT_SYSTEM"
+#else
+#define INPUT_SYSTEM_SIGN		""
+#endif
 
-typedef struct {
-	unsigned int keybinds[MAX_INPUT_BINDS];
-	uint8_t bounded_keybinds;
-
-	unsigned int mousebinds[MAX_INPUT_BINDS];
-	uint8_t bounded_mousebinds;
-
-	unsigned int gamepad_binds[MAX_INPUT_BINDS];
-	uint8_t gamepad_device_binds[MAX_INPUT_BINDS];
-	uint8_t bounded_gamepad_binds;
-} InputRegister;
-
-typedef enum {
-	INPUT_TYPE_KEYBOARD,
-	INPUT_TYPE_MOUSE,
-	INPUT_TYPE_GAMEPAD
-} InputType;
-
-typedef enum {
-	INPUT_IDLE,
-	INPUT_HELD,
-	INPUT_PRESSED,
-	INPUT_RELEASED
-} InputState;
-
-typedef enum {
-	INPUT_ACCEPT, INPUT_CANCEL,
-	INPUT_LEFT, INPUT_RIGHT, INPUT_UP, INPUT_DOWN,
-	INPUT_FULLSCREEN,
-	INPUT_COUNT
-} Input;
-
-void input_init();
 bool input_bind(Input input, uint8_t slot, InputType type, uint8_t device, uint16_t input_code);
 
-void input_refresh();
+void input_refresh(void);
 
 bool is_input_held(Input input);
 bool is_input_pressed(Input input);
 bool is_input_released(Input input);
 
-#endif /* _INPUT_SYSTEM_H */
+#endif // INPUT_H

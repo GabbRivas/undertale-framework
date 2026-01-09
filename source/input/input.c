@@ -1,82 +1,67 @@
-#include "input.h"
+#include <input/input.h>
+#include <input/input_definitions.h>
+#include <debug.h>
+#include <input/input_internal.h>
 
-static InputRegister _input_container[INPUT_COUNT];
+static InputSlot	input_register[INPUT_COUNT];
+static bool 	 	input_prev_down[INPUT_COUNT] = {false};
+static InputState	input_state[INPUT_COUNT] = {INPUT_IDLE};
 
-static bool _input_prev_down[INPUT_COUNT];
-static InputState _input_state_register[INPUT_COUNT] = {INPUT_IDLE};
 
-static inline bool _is_input_down(const InputRegister *_input){
-	for (int _entry = 0; _entry < _input->bounded_keybinds; ++_entry){
-		if (IsKeyDown(_input->keybinds[_entry])) return true;
+bool input_bind(Input input, uint8_t slot, InputType type, uint8_t device, uint16_t input_code)
+{
+	if ((unsigned)input >= INPUT_COUNT || slot >= MAX_INPUT_BINDS)
+	{
+		debug_print((unsigned)input >= INPUT_COUNT ?
+			"%s Trying to assign an input out of range, [Input: %i] in range %i, [Slot: %i] in range %i\n" :
+			"%s Attempting to assign an input out of range, [Input: %i] in range %i, [Slot: %i] in range %i\n",
+			INPUT_SYSTEM_SIGN, input, INPUT_COUNT, slot, MAX_INPUT_BINDS);
+		return false;
 	}
-	for (int _entry = 0; _entry < _input->bounded_mousebinds; ++_entry){
-		if (IsMouseButtonDown(_input->mousebinds[_entry])) return true;
-	}
-	for (int _entry = 0; _entry < _input->bounded_gamepad_binds; ++_entry){
-		if (IsGamepadAvailable(_input->gamepad_device_binds[_entry]) && IsGamepadButtonDown(_input->gamepad_device_binds[_entry], _input->gamepad_binds[_entry])) return true;
-	}
 
-	return false;
-}
-
-static inline void _bind_keyboard_input(InputRegister* _target, uint8_t _slot, uint16_t _input_code){
-	_target->keybinds[_slot] = _input_code;
-	if (_slot >= _target->bounded_keybinds) _target->bounded_keybinds = _slot+1;
-}
-
-static inline void _bind_mouse_input(InputRegister* _target, uint8_t _slot, uint16_t _input_code){
-	_target->mousebinds[_slot] = _input_code;
-	if (_slot >= _target->bounded_mousebinds) _target->bounded_mousebinds = _slot+1;
-}
-
-static inline void _bind_gamepad_input(InputRegister* _target, uint8_t _slot, uint8_t _device, uint16_t _input_code){
-	_target->gamepad_device_binds[_slot] = _device;
-	_target->gamepad_binds[_slot] = _input_code;
-	if (_slot >= _target->bounded_gamepad_binds) _target->bounded_gamepad_binds = _slot+1;
-}
-
-bool input_bind(Input input, uint8_t slot, InputType type, uint8_t device, uint16_t input_code){
-	if ((unsigned)input >= INPUT_COUNT || slot >= MAX_INPUT_BINDS) return false;
-
-	switch (type) {
+	switch (type)
+	{
 		case INPUT_TYPE_KEYBOARD:
-		_bind_keyboard_input(&_input_container[input], slot, input_code);
+		_bind_keyboard_input(&input_register[input], slot, input_code);
 		break;
 		case INPUT_TYPE_MOUSE:
-		_bind_mouse_input(&_input_container[input], slot, input_code);
+		_bind_mouse_input(&input_register[input], slot, input_code);
 		break;
 		case INPUT_TYPE_GAMEPAD:
-		_bind_gamepad_input(&_input_container[input],slot, device, input_code);
+		_bind_gamepad_input(&input_register[input], device, slot, input_code);
 		break;
 		default:
 		return false;
 	}
+
+	debug_print("%s Successfully bound [Input %i] to [Slot %i] with [Type %i] and [Device %i]\n",INPUT_SYSTEM_SIGN, input, slot, type, device);
 	return true;
 }
 
-void input_refresh(){
-	for (int _input_index = 0; _input_index < INPUT_COUNT; ++_input_index){
-		const InputRegister *_loaded_input = &_input_container[_input_index];
-		bool down = _is_input_down(_loaded_input);
+void input_refresh(void)
+{
+	for (int input_index = 0; input_index < INPUT_COUNT; ++input_index)
+	{
+		bool down = _is_input_down(&input_register[input_index]);
 
-		if (down) _input_state_register[_input_index] = _input_prev_down[_input_index] ?  INPUT_HELD :  INPUT_PRESSED;
-		else _input_state_register[_input_index] = _input_prev_down[_input_index] ? INPUT_RELEASED : INPUT_IDLE;
+		if(down) input_state[input_index] = input_prev_down[input_index] ? INPUT_HELD : INPUT_PRESSED;
+		else input_state[input_index] = input_prev_down[input_index] ? INPUT_RELEASED : INPUT_IDLE;
 
-		_input_prev_down[_input_index] = down;
-
+		input_prev_down[input_index] = down;
 	}
 }
 
-bool is_input_held(Input input){
-	if ((unsigned)input >= INPUT_COUNT) return false;
-	return (_input_state_register[input] == INPUT_HELD || _input_state_register[input] == INPUT_PRESSED);
+bool is_input_held(Input input)
+{
+	return input_state[input] == INPUT_HELD || input_state[input] == INPUT_PRESSED;
 }
 
-bool is_input_pressed(Input input){
-	if ((unsigned)input >= INPUT_COUNT) return false;
-	return _input_state_register[input] == INPUT_PRESSED;
+bool is_input_pressed(Input input)
+{
+	return input_state[input] == INPUT_PRESSED;
 }
-bool is_input_released(Input input){
-	if ((unsigned)input >= INPUT_COUNT) return false;
-	return _input_state_register[input] == INPUT_RELEASED;
+
+bool is_input_released(Input input)
+{
+	return input_state[input] == INPUT_RELEASED;
 }
