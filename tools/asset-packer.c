@@ -216,7 +216,7 @@ static void pack_file(size_t index)
 	};
 	entry_register[index] = file_entry;
 
-	fprintf(stderr, "Packed file at normalized path \"%s\" with hash %I64u\n", file->normalized_path, file_entry.hash);
+	fprintf(stderr, "Packed file at normalized path %s with hash %I64u\n", file->normalized_path, file_entry.hash);
 }
 
 static inline void init_packing(void)
