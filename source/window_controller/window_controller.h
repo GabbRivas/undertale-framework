@@ -3,43 +3,18 @@
 
 #include <raylib.h>
 #include <stdint.h>
+#include <window_controller/window_definitions.h>
 
-typedef struct
-{
-	const char	*border_path;
-	Color 		color;
-	float		alpha;
-	Texture2D	border_texture;
-} WindowBorder;
-
-typedef struct
-{
-	uint64_t 	base_width;
-	uint64_t 	base_height;
-
-	uint64_t	virtual_width;
-	uint64_t	virtual_height;
-
-	bool		border_enabled;
-
-	RenderTexture2D	window_buffer;
-	RenderTexture2D	game_buffer;
-
-	WindowBorder	border;
-} WindowControlData;
-
-extern WindowControlData* window_control;
+#define 	WINDOW_CONTROLLER_SIGNATURE	"WINDOW CONTROLLER"
 
 // Ideally, when transitioning into a new border we'd need to draw the new border over the old one, and fade in the new border.
 // To achieve that, instead of storing into an array the borders we simply allow the user to draw over other borders if needed.
 
-void game_draw_begin(void);
-void game_draw_end(void);
+void window_center(void);
 
-//This allows to (if needed, draw onto the application buffer once the gamebuffer has been drawn into the application buffer) in between game_draw_end and game_draw_update
-void game_draw_update(void);
+void init_window_control(uint64_t _base_width, uint64_t _base_height);
+WindowControlData* get_window_control_data(void);
 
-void game_draw_shutdown(void);
 void toggle_borderless_fullscreen(void);
 
 #endif //_WINDOW_CONTROLLER_H
