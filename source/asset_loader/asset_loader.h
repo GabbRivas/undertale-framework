@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
+#define ASSET_LOADER_BORDER_CLUSTER 	"border_cluster"
 #define ASSET_LOADER_GLOBAL_CLUSTER 	"global_cluster"
 #define ASSET_LOADER_BATTLE_CLUSTER 	"battle_cluster"
 #define ASSET_LOADER_OVERWORLD_CLUSTER 	"overworld_cluster"
@@ -56,5 +57,6 @@ void asset_system_shutdown(void);
 //Raylib wrapper
 Image asset_retrieve_image(const char *vpath);
 Texture2D asset_retrieve_texture(const char *vpath);
+Font asset_retrieve_font(const char *vpath);
 
 #endif // ASSET_LOADER_H

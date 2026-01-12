@@ -480,3 +480,36 @@ Texture2D asset_retrieve_texture(const char *vpath)
 	debug_print("[%s] Texture %s loaded successfully\n", ASSET_LOADER_SIGN, vpath);
 	return asset_texture;
 }
+
+Font asset_retrieve_font(const char *vpath)
+{
+	AssetHandle handle;
+	if(!asset_find(vpath, &handle)) return (Font){0};
+
+	void *mem = malloc(asset_register[handle.asset_index].raw_size);
+	AssetBuffer buff = {
+		.dest = mem,
+		.capacity = mem ? (uint32_t)asset_register[handle.asset_index].raw_size : 0
+	};
+
+	if (!buff.dest) {
+		debug_print("[%s] Failed to allocate memory for asset loading\n", ASSET_LOADER_SIGN);
+		return (Font){0};
+	}
+
+	size_t written;
+	asset_load_raw(handle, buff, &written);
+
+	char *file_ext = retrieve_file_ext(vpath);
+	Font asset_font = LoadFontFromMemory(file_ext, buff.dest, written, 32, NULL, 0);
+	if (!IsFontValid(asset_font)) {
+		debug_print("[%s] Failed to load font from memory\n", ASSET_LOADER_SIGN);
+		free(mem);
+		return (Font){0};
+	}
+
+	free(mem);
+	debug_print("[%s] Font %s loaded successfully\n", ASSET_LOADER_SIGN, vpath);
+	return asset_font;
+
+}
