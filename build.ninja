@@ -22,9 +22,12 @@ build bin/asset-packer.exe: link_tool build\obj\asset-packer.o include/lz4/lz4.c
 build build\obj\asset_loader.o: cc source/asset_loader/asset_loader.c
 build build\obj\input.o: cc source/input/input.c
 build build\obj\input_internal.o: cc source/input/input_internal.c
+build build\obj\window_controller.o: cc source/window_controller/window_controller.c
+build build\obj\window_border.o: cc source/window_controller/window_border.c
+build build\obj\window_drawer.o: cc source/window_controller/window_drawer.c
 build build\obj\app.o: cc source/app/app.c
 build build\obj\lz4.o: cc include/lz4/lz4.c
 build build\obj\xxhash.o: cc include/xxhash/xxhash.c
 
-build bin\undertale-engine.exe: link build\obj\asset_loader.o build\obj\input.o build\obj\input_internal.o build\obj\app.o build\obj\lz4.o build\obj\xxhash.o
+build bin\undertale-engine.exe: link build\obj\asset_loader.o build\obj\input.o build\obj\input_internal.o build\obj\window_controller.o build\obj\window_border.o build\obj\window_drawer.o build\obj\app.o build\obj\lz4.o build\obj\xxhash.o
 default bin\undertale-engine.exe bin/asset-packer.exe

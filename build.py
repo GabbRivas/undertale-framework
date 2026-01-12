@@ -15,8 +15,14 @@ BIN_DIR = Path("bin")
 
 ENGINE_SRC = [
     "source/asset_loader/asset_loader.c",
+    #################
     "source/input/input.c",
     "source/input/input_internal.c",
+    #################
+    "source/window_controller/window_controller.c",
+    "source/window_controller/window_border.c",
+    "source/window_controller/window_drawer.c",
+    #################
 ]
 
 APP_SRC = [
