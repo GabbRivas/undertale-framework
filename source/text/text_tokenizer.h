@@ -5,15 +5,18 @@
 #include <stdbool.h>
 #include <raylib.h>
 
-#define TEXT_LEFT_DELIMITER "<"
-#define TEXT_RIGHT_DELIMITER ">"
+#define TEXT_LEFT_DELIMITER '<'
+#define TEXT_RIGHT_DELIMITER '>'
+#define TEXT_TOKEN_DELIMITER ':'
 
+//Any tokentype added should be also added to text_system.c on the init function.
+// If planning to implement it, put it after proc_end to avoid exploding everything up and after implementing it but it before proc_end, and on the init system.
 typedef enum
 {
-	TOKEN_POSITION,
+	TOKEN_POSITION_X,
+	TOKEN_POSITION_Y,
 	TOKEN_ALIGNMENT,
 
-	TOKEN_TEXT,
 	TOKEN_NEW_LINE,
 	TOKEN_INSTANT_TOGGLE,
 	TOKEN_SPEED,
@@ -28,20 +31,22 @@ typedef enum
 	TOKEN_RAINBOW,
 
 	TOKEN_SCALE_X,
-	TOKEN_SCALE_Y
+	TOKEN_SCALE_Y,
+
+	TOKEN_PROC_END,
 }TokenType;
 
 typedef struct
 {
+	const char *name;
 	TokenType type;
-	union
-	{
-		const char 	*text;
-		Color 		Color;
-		float 		fvalue;
-		struct 		{ float x, y; } vec2;
-		struct 		{ Color top_left, top_right, down_left, down_right; } gradient;
-	};
+} TokenCmdlet;
+
+typedef struct
+{
+	TokenType type;
 } Token;
+
+
 
 #endif // TEXT_TOKENIZER_H

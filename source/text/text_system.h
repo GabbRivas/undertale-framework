@@ -46,8 +46,11 @@ typedef struct
 	Color		color;
 } TextGlyph;
 
+void text_system_init(void); //create at the beginning of the program the lookup tables for commands.
+
 static bool _format_text(TextObject *text_obj, const char *text, ...);
-static bool _parse_text(TextObject *text_obj, const char*text);
+static void _parse_text(TextObject *text_obj);
+static void _validate_command(TextObject *text_obj, unsigned int start, unsigned int len);
 
 uint32_t	text_create_object(void);
 bool		text_destroy_object(uint32_t idx);
