@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <text/text_system.h>
 #include <raylib.h>
 #include <stdint.h>
@@ -13,38 +14,46 @@ static TokenCmdlet 		registered_commands[TOKEN_PROC_END] = {0};
 uint32_t			command_list_len = 0;
 uint32_t			next_free_slot = 0;
 
+static inline int compare_cmdlets(const void *cmdlet_a, const void *cmdlet_b)
+{
+	return ((TokenCmdlet*)cmdlet_a)->hash < ((TokenCmdlet*)cmdlet_b)->hash ? -1 : 1;
+}
+
 void text_system_init(void)
 {
 	TokenCmdlet cmdlets[] = {
-		{"pos_x", TOKEN_POSITION_X},
-		{"pos_y", TOKEN_POSITION_Y},
-		{"align", TOKEN_ALIGNMENT},
+		{"pos_x", TOKEN_POSITION_X, 0},
+		{"pos_y", TOKEN_POSITION_Y, 0},
+		{"align", TOKEN_ALIGNMENT, 0},
 
-		{"endln", TOKEN_NEW_LINE},
-		{"instant", TOKEN_INSTANT_TOGGLE},
-		{"speed", TOKEN_SPEED},
-		{"voice", TOKEN_VOICE},
-		{"sleep", TOKEN_SLEEP},
-		{"char_progression", TOKEN_CHAR_PROGRESSION},
+		{"endln", TOKEN_NEW_LINE, 0},
+		{"instant", TOKEN_INSTANT_TOGGLE, 0},
+		{"speed", TOKEN_SPEED, 0},
+		{"voice", TOKEN_VOICE, 0},
+		{"sleep", TOKEN_SLEEP, 0},
+		{"char_progression", TOKEN_CHAR_PROGRESSION, 0},
 
-		{"color", TOKEN_COLOR},
-		{"color_ext", TOKEN_COLOR_EXT},
-		{"shake", TOKEN_SHAKE},
-		{"wave", TOKEN_WAVE},
-		{"rainbow", TOKEN_RAINBOW},
+		{"color", TOKEN_COLOR, 0},
+		{"color_ext", TOKEN_COLOR_EXT, 0},
+		{"shake", TOKEN_SHAKE, 0},
+		{"wave", TOKEN_WAVE, 0},
+		{"rainbow", TOKEN_RAINBOW, 0},
 
-		{"scale_x", TOKEN_SCALE_X},
-		{"scale_y", TOKEN_SCALE_Y},
+		{"scale_x", TOKEN_SCALE_X, 0},
+		{"scale_y", TOKEN_SCALE_Y, 0},
 	};
 
 	for (uint32_t proc = 0; proc < (uint32_t)TOKEN_PROC_END; ++proc)
 	{
-		XXH64_hash_t hash = XXH64(cmdlets[proc].name, strlen(cmdlets[proc].name), 0);
-		XXH64_hash_t len = hash % TOKEN_PROC_END;
-		registered_commands[len] = cmdlets[proc];
-		debug_print("%s Registered command [%s] in position [%i]\n", TEXT_SYSTEM_SIGN, cmdlets[proc].name, len);
-		command_list_len = proc+1;
-		//In case collisions exist, simply modify the array size and the hash modulo.
+		cmdlets[proc].hash = XXH64(cmdlets[proc].name, strlen(cmdlets[proc].name), 0);
+		registered_commands[proc] = cmdlets[proc];
+	}
+
+	qsort(registered_commands, TOKEN_PROC_END, sizeof(TokenCmdlet), compare_cmdlets);
+
+	for (uint32_t proc = 0; proc < (uint32_t)TOKEN_PROC_END; ++proc)
+	{
+		debug_print("%s Registered command [%s] in position [%u] with hash [%llu]\n", TEXT_SYSTEM_SIGN, registered_commands[proc].name, proc, registered_commands[proc].hash);
 	}
 }
 
@@ -115,7 +124,7 @@ static void _parse_text(TextObject *text_obj)
 			start = proc;
 		}
 
-		if(*cursor == TEXT_RIGHT_DELIMITER && start != -1)
+		if(*cursor == TEXT_RIGHT_DELIMITER && start != UINT_MAX)
 		{
 			_validate_command(text_obj, start, proc-start);
 			start = -1;
@@ -144,17 +153,30 @@ static void _validate_command(TextObject *text_obj, unsigned int start, unsigned
 		++real_len;
 	}
 
-	XXH64_hash_t hash = XXH64(name_start, real_len, 0);
-	uint32_t pos = hash % command_list_len;
+	XXH64_hash_t target_hash = XXH64(name_start, real_len, 0);
 
-	TokenCmdlet cmd = registered_commands[pos];
-	if (cmd.name != NULL && strncmp(cmd.name, name_start, real_len) == 0)
+	int infimum = 0;
+	int supremum = TOKEN_PROC_END-1;
+	TokenCmdlet *found_cmd = NULL;
+
+	while(infimum <= supremum)
 	{
-		debug_print("%s Found command [%s] in position [%i]\n", TEXT_SYSTEM_SIGN, cmd.name, *(name_start) - start - 1);
+		int mean = infimum + (infimum + supremum)/2;
+
+		if(registered_commands[mean].hash == target_hash)
+		{
+			found_cmd = &registered_commands[mean];
+			break;
+		}
+
+		infimum = mean;
+		mean += registered_commands[mean].hash < target_hash ? 1 : -1;
 	}
-	else
+
+	if (found_cmd != NULL && strncmp(found_cmd->name, name_start, real_len) == 0)
 	{
-		return;
+		debug_print("%s Parser found command: [%s] (Negation: %d)\n", TEXT_SYSTEM_SIGN, found_cmd->name, negation_cmd);
+
 	}
 }
 
@@ -168,7 +190,7 @@ uint32_t text_create_object(void)
 		return -1;
 	}
 
-	debug_print("%s Created text object with [IDX %lu]\n", TEXT_SYSTEM_SIGN);
+	debug_print("%s Created text object with [IDX %u]\n", TEXT_SYSTEM_SIGN, idx);
 	find_next_free_slot();
 	return idx;
 }
@@ -180,7 +202,7 @@ bool text_destroy_object(uint32_t idx)
 	free(text_object_pool[idx]);
 	text_object_pool[idx] = NULL;
 
-	debug_print((!text_object_pool[idx] ? "%s Destroyed text object with [IDX %lu]\n" : "%s Failed to destroy text object with [IDX %lu]\n"), TEXT_SYSTEM_SIGN, idx);
+	debug_print((!text_object_pool[idx] ? "%s Destroyed text object with [IDX %u]\n" : "%s Failed to destroy text object with [IDX %u]\n"), TEXT_SYSTEM_SIGN, idx);
 	if (!text_object_pool[idx]) next_free_slot = idx < next_free_slot ? idx : next_free_slot;
 	return !text_object_pool[idx];
 }

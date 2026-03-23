@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <raylib.h>
+#include <xxhash/xxhash.h>
 
 #define TEXT_LEFT_DELIMITER '<'
 #define TEXT_RIGHT_DELIMITER '>'
@@ -40,6 +41,7 @@ typedef struct
 {
 	const char *name;
 	TokenType type;
+	XXH64_hash_t hash;
 } TokenCmdlet;
 
 typedef struct
