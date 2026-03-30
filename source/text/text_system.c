@@ -1,13 +1,11 @@
-#include <limits.h>
+#include <text/text_definitions.h>
 #include <text/text_system.h>
-#include <raylib.h>
-#include <stdint.h>
 #include <text/text_tokenizer.h>
+#include <text/text_internal.h>
 #include <debug.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
-#include <xxhash/xxhash.h>
+#include <stdlib.h>
 
 static TextObject* 		text_object_pool[MAX_TEXT_OBJECTS];
 static TokenCmdlet 		registered_commands[TOKEN_PROC_END] = {0};
@@ -75,126 +73,6 @@ static inline void find_next_free_slot(void)
 	}
 }
 
-static bool _format_text(TextObject *text_obj, const char *text, ...)
-{
-	va_list args, args_copy;
-	va_start(args, text);
-
-	va_copy(args_copy, args);
-
-	int required_size = vsnprintf(NULL, 0, text, args_copy);
-
-	if (required_size < 0)
-	{
-		va_end(args_copy);
-		va_end(args);
-		return false;
-	}
-
-	char *new_ptr = realloc(text_obj->text, required_size + 1);
-	if (!new_ptr)
-	{
-		va_end(args_copy);
-		va_end(args);
-		return false;
-	}
-	text_obj->text = new_ptr;
-
-	int status_code = vsnprintf(text_obj->text, required_size + 1, text, args_copy);
-
-	va_end(args_copy);
-	va_end(args);
-
-	debug_print("%s Formated text into text object with [Status Code %d]\n", TEXT_SYSTEM_SIGN, status_code);
-	return status_code >= 0;
-}
-
-static bool _validate_command(TextObject *text_obj, unsigned int start, unsigned int len)
-{
-	bool negation_cmd = false;
-	const char *cmd_start = text_obj->text + start + 1;
-
-	if (*cmd_start == '/')
-	{
-		negation_cmd = true;
-		++cmd_start;
-		--len;
-	}
-
-	uint32_t cmd_len = 0;
-	while (cmd_len < len && cmd_start[cmd_len] != TEXT_TOKEN_DELIMITER && cmd_start[cmd_len] != TEXT_RIGHT_DELIMITER) ++cmd_len;
-
-	XXH64_hash_t target_hash = XXH64(cmd_start, cmd_len, 0);
-
-	int infimum = 0;
-	int supremum = TOKEN_PROC_END - 1;
-	TokenCmdlet *found_cmd = NULL;
-
-	while (infimum <= supremum)
-	{
-		int mid = infimum + (supremum - infimum)/2;
-
-		if (registered_commands[mid].hash == target_hash)
-		{
-			found_cmd = &registered_commands[mid];
-			break;
-		}
-
-		if (registered_commands[mid].hash < target_hash)
-		{
-			infimum = mid + 1;
-		}
-		else
-		{
-			supremum = mid - 1;
-		}
-	}
-
-	if (found_cmd != NULL)
-	{
-		debug_print("%s Text parser found command: [%s] (Negation: %d)\n", TEXT_SYSTEM_SIGN, found_cmd->name, negation_cmd);
-
-
-
-		return true;
-	}
-
-	debug_print("%s Text parser could not find given command\n", TEXT_SYSTEM_SIGN);
-	return false;
-}
-
-static void _parse_text(TextObject *text_obj)
-{
-	// O(n) time complexity, should aspire to make it O(nln(n)) if possible [still pretty good]
-	char *raw_text = text_obj->text;
-
-	unsigned int idx = 0;
-	unsigned int visible_chars = 0;
-
-	text_obj->token_count = 0;
-
-	while (raw_text[idx] != '\0')
-	{
-		if (raw_text[idx] == TEXT_LEFT_DELIMITER)
-		{
-			uint32_t end = idx + 1;
-			bool is_valid = false;
-
-			while (raw_text[end] != TEXT_RIGHT_DELIMITER && raw_text[end] != '\0') ++end;
-
-			is_valid = _validate_command(text_obj, idx, end - idx);
-			if (is_valid)
-			{
-				idx = end + 1;
-				continue;
-			}
-		}
-
-		++visible_chars;
-		++idx;
-	}
-}
-
 uint32_t text_create_object(void)
 {
 	uint32_t idx = next_free_slot;
@@ -210,31 +88,67 @@ uint32_t text_create_object(void)
 	return idx;
 }
 
+bool text_set_string_target(uint32_t object_idx, const char *text, ...)
+{
+	TextObject *txt_obj = text_object_pool[object_idx];
+	if (!txt_obj) return false;
+
+	size_t len = strlen(text) + 1;
+	if (len > txt_obj->template_capacity)
+	{
+		char *p = realloc(txt_obj->format_template, len);
+		if (!p) return false;
+		txt_obj->format_template = p;
+		txt_obj->template_capacity = len;
+	}
+	memcpy(txt_obj->format_template, text, len);
+
+	va_list args;
+	va_start(args, text);
+	bool ret_val = _resolve_template(txt_obj, args);
+	va_end(args);
+	if (!ret_val) return false;
+
+	_parse_template(txt_obj, registered_commands);
+	return true;
+}
+
+void text_mark_live(uint32_t object_idx, bool live)
+{
+	TextObject *txt_obj = text_object_pool[object_idx];
+	if (!txt_obj) return;
+	txt_obj->live_state = live;
+}
+
+bool text_live_update_string(uint32_t object_idx, ...)
+{
+	TextObject *txt_obj = text_object_pool[object_idx];
+	if (!txt_obj || !txt_obj->live_state) return false;
+
+	va_list args;
+	va_start(args, object_idx);
+
+	bool ret_val = _resolve_template(txt_obj, args);
+	va_end(args);
+
+	if (!ret_val) return false;
+
+	_parse_template(txt_obj, registered_commands);
+	return true;
+}
+
 bool text_destroy_object(uint32_t idx)
 {
 	if(!text_object_pool[idx]) return true;
 
-	free(text_object_pool[idx]);
+	TextObject *txt_obj = text_object_pool[idx];
+	free(txt_obj->format_template);
+	free(txt_obj->resolved_text);
+	free(txt_obj->tokens);
+	free(txt_obj);
 	text_object_pool[idx] = NULL;
 
 	debug_print((!text_object_pool[idx] ? "%s Destroyed text object with [IDX %u]\n" : "%s Failed to destroy text object with [IDX %u]\n"), TEXT_SYSTEM_SIGN, idx);
 	if (!text_object_pool[idx]) next_free_slot = idx < next_free_slot ? idx : next_free_slot;
-	return !text_object_pool[idx];
-}
-
-bool text_set_string_target(uint32_t object_idx, const char *text, ...)
-{
-	if (!text_object_pool[object_idx]) return false;
-
-	bool state = true;
-	va_list args;
-	va_start(args, text);
-	state = _format_text(text_object_pool[object_idx], text, args);
-	va_end(args);
-
-	if (!state) return state;
-
-	_parse_text(text_object_pool[object_idx]);
-
-	return state;
+	return true;
 }

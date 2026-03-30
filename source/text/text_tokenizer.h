@@ -10,6 +10,8 @@
 #define TEXT_RIGHT_DELIMITER '>'
 #define TEXT_TOKEN_DELIMITER ','
 
+#define TEXT_TOKEN_ARGUMENT_SIZE	64
+
 //Any tokentype added should be also added to text_system.c on the init function.
 // If planning to implement it, put it after proc_end to avoid exploding everything up and after implementing it but it before proc_end, and on the init system.
 typedef enum
@@ -54,6 +56,7 @@ typedef struct
 	TokenType 	type;
 	uint32_t	position;
 	bool		negative;
+	char 		args[TEXT_TOKEN_ARGUMENT_SIZE];
 } ParsedToken;
 
 #endif // TEXT_TOKENIZER_H
