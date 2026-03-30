@@ -5,7 +5,7 @@
 bool _is_input_down(const InputSlot *_input)
 {
 	for (int entry = 0; entry < _input->bounded_keybinds; ++entry) if (IsKeyDown(_input->keybinds[entry])) return true;
-	for (int entry = 0; entry < _input->bounded_mousebinds; ++entry) if (IsMouseButtonDown(_input->bounded_mousebinds)) return true;
+	for (int entry = 0; entry < _input->bounded_mousebinds; ++entry) if (IsMouseButtonDown(_input->mousebinds[entry])) return true;
 	for (int entry = 0; entry < _input->bounded_keybinds; ++entry) if (IsGamepadButtonDown(_input->gamepad_devicebinds[entry], _input->gamepadbinds[entry])) return true;
 	return false;
 }
