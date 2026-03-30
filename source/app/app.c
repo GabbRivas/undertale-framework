@@ -7,6 +7,7 @@
 #include <window_controller/window_border.h>
 #include <window_controller/window_drawer.h>
 #include <window_controller/window_definitions.h>
+#include <text/text_system.h>
 
 #define DATA_FILE "data0"
 
@@ -50,6 +51,7 @@ int main(void)
 	asset_system_init(DATA_FILE);
 	init_window_control(640, 480);
 	input_custom();
+	text_system_init();
 
 	WindowControlData* window_data = get_window_control_data();
 

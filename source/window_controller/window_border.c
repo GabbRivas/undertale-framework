@@ -60,7 +60,7 @@ bool window_set_current_border(WindowBorder *border)
 
 	if (data->border_enabled) return set_window_border_attributes(data);
 
-	debug_print(&(data->border)!=NULL ? "[%s] Sucesfully set new border" : "[%s] Failed to set new border\n", BORDER_SIGNATURE);
+	debug_print(&(data->border)!=NULL ? "[%s] Sucesfully set new border\n" : "[%s] Failed to set new border\n", BORDER_SIGNATURE);
 	return &(data->border)!=NULL ? true : false;
 }
 

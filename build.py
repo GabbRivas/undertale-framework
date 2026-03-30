@@ -23,6 +23,7 @@ ENGINE_SRC = [
     "source/window_controller/window_border.c",
     "source/window_controller/window_drawer.c",
     #################
+    "source/text/text_system.c",
 ]
 
 APP_SRC = [

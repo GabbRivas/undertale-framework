@@ -4,10 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <raylib.h>
+#include <xxhash/xxhash.h>
 
 #define TEXT_LEFT_DELIMITER '<'
 #define TEXT_RIGHT_DELIMITER '>'
-#define TEXT_TOKEN_DELIMITER ':'
+#define TEXT_TOKEN_DELIMITER ','
 
 //Any tokentype added should be also added to text_system.c on the init function.
 // If planning to implement it, put it after proc_end to avoid exploding everything up and after implementing it but it before proc_end, and on the init system.
@@ -40,6 +41,7 @@ typedef struct
 {
 	const char *name;
 	TokenType type;
+	XXH64_hash_t hash;
 } TokenCmdlet;
 
 typedef struct
@@ -47,6 +49,11 @@ typedef struct
 	TokenType type;
 } Token;
 
-
+typedef struct
+{
+	TokenType 	type;
+	uint32_t	position;
+	bool		negative;
+} ParsedToken;
 
 #endif // TEXT_TOKENIZER_H
