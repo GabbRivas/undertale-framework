@@ -75,6 +75,11 @@ int main(void)
 		input_refresh();
 		if (is_input_pressed(INPUT_FULLSCREEN)) toggle_borderless_fullscreen();
 
+		if (is_input_pressed(INPUT_CANCEL)){
+			uint32_t text_idx = text_create_object();
+			text_set_string_target(text_idx, "Hello <color, RED>World</color>!");
+		}
+
 		game_draw_begin();
 			ClearBackground(BLACK);
 			DrawTextEx(ut_font, TextFormat("FPS (%i)\nFrame-Temps (%f)ms", GetFPS(), GetFrameTime()), (Vector2){32,32}, 32, 1, WHITE);

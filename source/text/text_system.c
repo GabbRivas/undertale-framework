@@ -22,8 +22,8 @@ static inline int compare_cmdlets(const void *cmdlet_a, const void *cmdlet_b)
 void text_system_init(void)
 {
 	TokenCmdlet cmdlets[] = {
-		{"pos_x", TOKEN_POSITION_X, 0},
-		{"pos_y", TOKEN_POSITION_Y, 0},
+		{"pos x", TOKEN_POSITION_X, 0},
+		{"pos y", TOKEN_POSITION_Y, 0},
 		{"align", TOKEN_ALIGNMENT, 0},
 
 		{"endln", TOKEN_NEW_LINE, 0},
@@ -31,16 +31,16 @@ void text_system_init(void)
 		{"speed", TOKEN_SPEED, 0},
 		{"voice", TOKEN_VOICE, 0},
 		{"sleep", TOKEN_SLEEP, 0},
-		{"char_progression", TOKEN_CHAR_PROGRESSION, 0},
+		{"char progression", TOKEN_CHAR_PROGRESSION, 0},
 
 		{"color", TOKEN_COLOR, 0},
-		{"color_ext", TOKEN_COLOR_EXT, 0},
+		{"color ext", TOKEN_COLOR_EXT, 0},
 		{"shake", TOKEN_SHAKE, 0},
 		{"wave", TOKEN_WAVE, 0},
 		{"rainbow", TOKEN_RAINBOW, 0},
 
-		{"scale_x", TOKEN_SCALE_X, 0},
-		{"scale_y", TOKEN_SCALE_Y, 0},
+		{"scale x", TOKEN_SCALE_X, 0},
+		{"scale y", TOKEN_SCALE_Y, 0},
 	};
 
 	for (uint32_t proc = 0; proc < (uint32_t)TOKEN_PROC_END; ++proc)
@@ -109,9 +109,63 @@ static bool _format_text(TextObject *text_obj, const char *text, ...)
 	return status_code >= 0;
 }
 
+static bool _validate_command(TextObject *text_obj, unsigned int start, unsigned int len)
+{
+	bool negation_cmd = false;
+	const char *cmd_start = text_obj->text + start + 1;
+
+	if (*cmd_start == '/')
+	{
+		negation_cmd = true;
+		++cmd_start;
+		--len;
+	}
+
+	uint32_t cmd_len = 0;
+	while (cmd_len < len && cmd_start[cmd_len] != TEXT_TOKEN_DELIMITER && cmd_start[cmd_len] != TEXT_RIGHT_DELIMITER) ++cmd_len;
+
+	XXH64_hash_t target_hash = XXH64(cmd_start, cmd_len, 0);
+
+	int infimum = 0;
+	int supremum = TOKEN_PROC_END - 1;
+	TokenCmdlet *found_cmd = NULL;
+
+	while (infimum <= supremum)
+	{
+		int mid = infimum + (supremum - infimum)/2;
+
+		if (registered_commands[mid].hash == target_hash)
+		{
+			found_cmd = &registered_commands[mid];
+			break;
+		}
+
+		if (registered_commands[mid].hash < target_hash)
+		{
+			infimum = mid + 1;
+		}
+		else
+		{
+			supremum = mid - 1;
+		}
+	}
+
+	if (found_cmd != NULL)
+	{
+		debug_print("%s Text parser found command: [%s] (Negation: %d)\n", TEXT_SYSTEM_SIGN, found_cmd->name, negation_cmd);
+
+
+
+		return true;
+	}
+
+	debug_print("%s Text parser could not find given command\n", TEXT_SYSTEM_SIGN);
+	return false;
+}
+
 static void _parse_text(TextObject *text_obj)
 {
-	//O(n) time complexity, should probably look forward to improve it.
+	// O(n) time complexity, should aspire to make it O(nln(n)) if possible [still pretty good]
 	char *raw_text = text_obj->text;
 
 	unsigned int idx = 0;
@@ -121,17 +175,15 @@ static void _parse_text(TextObject *text_obj)
 
 	while (raw_text[idx] != '\0')
 	{
-
 		if (raw_text[idx] == TEXT_LEFT_DELIMITER)
 		{
 			uint32_t end = idx + 1;
+			bool is_valid = false;
 
-			while (raw_text[end] != TEXT_RIGHT_DELIMITER && raw_text[end] != '\0')
-			{
-				++end;
-			}
+			while (raw_text[end] != TEXT_RIGHT_DELIMITER && raw_text[end] != '\0') ++end;
 
-			if (raw_text[end] == TEXT_RIGHT_DELIMITER && _validate_command(text_obj, idx, end - idx))
+			is_valid = _validate_command(text_obj, idx, end - idx);
+			if (is_valid)
 			{
 				idx = end + 1;
 				continue;
@@ -140,62 +192,13 @@ static void _parse_text(TextObject *text_obj)
 
 		++visible_chars;
 		++idx;
-	};
-}
-
-static bool _validate_command(TextObject *text_obj, unsigned int start, unsigned int len)
-{
-	bool negation_cmd = false;
-	const char *name_start = text_obj->text + start + 1;
-	uint32_t name_len = len;
-
-	if (*name_start == '/')
-	{
-		negation_cmd = true;
-		++name_start;
-		--name_len;
 	}
-
-	uint32_t real_len = 0;
-	while (real_len < name_len && name_start[real_len] != TEXT_TOKEN_DELIMITER && name_start[real_len] != TEXT_RIGHT_DELIMITER)
-	{
-		++real_len;
-	}
-
-	XXH64_hash_t target_hash = XXH64(name_start, real_len, 0);
-
-	int infimum = 0;
-	int supremum = TOKEN_PROC_END-1;
-	TokenCmdlet *found_cmd = NULL;
-
-	while(infimum <= supremum)
-	{
-		int mean = infimum + (infimum + supremum)/2;
-
-		if(registered_commands[mean].hash == target_hash)
-		{
-			found_cmd = &registered_commands[mean];
-			break;
-		}
-
-		infimum = mean;
-		mean += registered_commands[mean].hash < target_hash ? 1 : -1;
-	}
-
-	if (found_cmd != NULL && strncmp(found_cmd->name, name_start, real_len) == 0)
-	{
-		debug_print("%s Parser found command: [%s] (Negation: %d)\n", TEXT_SYSTEM_SIGN, found_cmd->name, negation_cmd);
-
-	}
-
-	debug_print("%s Parser could not reckon command: [%s]\n", TEXT_SYSTEM_SIGN, name_start);
-	return false;
 }
 
 uint32_t text_create_object(void)
 {
 	uint32_t idx = next_free_slot;
-	text_object_pool[idx] = malloc(sizeof(TextObject));
+	text_object_pool[idx] = calloc(1, sizeof(TextObject));
 	if(!text_object_pool[idx])
 	{
 		debug_print("%s Failed to allocate memory for text object\n", TEXT_SYSTEM_SIGN);
