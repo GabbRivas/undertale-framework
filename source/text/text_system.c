@@ -22,8 +22,8 @@ static inline int compare_cmdlets(const void *cmdlet_a, const void *cmdlet_b)
 void text_system_init(void)
 {
 	TokenCmdlet cmdlets[] = {
-		{"pos x", TOKEN_POSITION_X, 0},
-		{"pos y", TOKEN_POSITION_Y, 0},
+		{"pos_x", TOKEN_POSITION_X, 0},
+		{"pos_y", TOKEN_POSITION_Y, 0},
 		{"align", TOKEN_ALIGNMENT, 0},
 
 		{"endln", TOKEN_NEW_LINE, 0},
@@ -140,10 +140,7 @@ static void _parse_text(TextObject *text_obj)
 
 		++visible_chars;
 		++idx;
-	}
-
-	text_obj->visible_characters = visible_chars;
-	debug_print("%s Parsed %u visible characters\n", TEXT_SYSTEM_SIGN, visible_chars);
+	};
 }
 
 static bool _validate_command(TextObject *text_obj, unsigned int start, unsigned int len)
@@ -173,7 +170,7 @@ static bool _validate_command(TextObject *text_obj, unsigned int start, unsigned
 
 	while(infimum <= supremum)
 	{
-		int mean = infimum + (supremum - infimum)/2;
+		int mean = infimum + (infimum + supremum)/2;
 
 		if(registered_commands[mean].hash == target_hash)
 		{
@@ -182,20 +179,13 @@ static bool _validate_command(TextObject *text_obj, unsigned int start, unsigned
 		}
 
 		infimum = mean;
-		infimum += registered_commands[mean].hash < target_hash ? 1 : -1;
+		mean += registered_commands[mean].hash < target_hash ? 1 : -1;
 	}
 
 	if (found_cmd != NULL && strncmp(found_cmd->name, name_start, real_len) == 0)
 	{
 		debug_print("%s Parser found command: [%s] (Negation: %d)\n", TEXT_SYSTEM_SIGN, found_cmd->name, negation_cmd);
 
-		ParsedToken parsed_token = {
-			.type = found_cmd->type,
-			.position = start,
-			.negative = negation_cmd,
-		};
-
-		return true;
 	}
 
 	debug_print("%s Parser could not reckon command: [%s]\n", TEXT_SYSTEM_SIGN, name_start);
